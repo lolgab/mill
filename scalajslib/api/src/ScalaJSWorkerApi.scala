@@ -9,6 +9,7 @@ trait ScalaJSWorkerApi {
            testBridgeInit: Boolean,
            fullOpt: Boolean,
            moduleKind: ModuleKind,
+           moduleSplitStyle: ModuleSplitStyle,
            useECMAScript2015: Boolean): Result[File]
 
   def run(config: JsEnvConfig, linkedFile: File): Unit
@@ -33,6 +34,11 @@ object ModuleKind{
   object ESModule extends ModuleKind
 }
 
+sealed trait ModuleSplitStyle
+object ModuleSplitStyle {
+  object FewestModules extends ModuleSplitStyle
+  object SmallestModules extends ModuleSplitStyle
+}
 
 sealed trait JsEnvConfig
 object JsEnvConfig{

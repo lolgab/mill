@@ -7,7 +7,7 @@ import scala.concurrent.duration.Duration
 import java.io.File
 
 import mill.api.Result
-import mill.scalajslib.api.{JsEnvConfig, ModuleKind}
+import mill.scalajslib.api.{JsEnvConfig, ModuleKind, ModuleSplitStyle}
 import org.scalajs.linker.{PathIRContainer, PathIRFile, PathOutputFile, StandardImpl}
 import org.scalajs.linker.interface.{ModuleKind => ScalaJSModuleKind, _}
 import org.scalajs.logging.ScalaConsoleLogger
@@ -51,11 +51,12 @@ class ScalaJSWorkerImpl extends mill.scalajslib.api.ScalaJSWorkerApi {
   }
   def link(sources: Array[File],
            libraries: Array[File],
-           dest: File,
+           destDirectory: File,
            main: String,
            testBridgeInit: Boolean,
            fullOpt: Boolean,
            moduleKind: ModuleKind,
+           moduleSplitStyle: ModuleSplitStyle, // ignored in 1.2-
            useECMAScript2015: Boolean) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     val linker = ScalaJSLinker.reuseOrCreate(LinkerInput(fullOpt, moduleKind, useECMAScript2015))
@@ -63,7 +64,8 @@ class ScalaJSWorkerImpl extends mill.scalajslib.api.ScalaJSWorkerApi {
     val sourceIRsFuture = Future.sequence(sources.toSeq.map(f => PathIRFile(f.toPath())))
     val irContainersPairs = PathIRContainer.fromClasspath(libraries.map(_.toPath()))
     val libraryIRsFuture = irContainersPairs.flatMap(pair => cache.cached(pair._1))
-    val jsFile = dest.toPath()
+    val dest = new File(destDirectory, "main.js")
+    val jsFile = new File(dest, "main.js").toPath()
     val sourceMap = jsFile.resolveSibling(jsFile.getFileName + ".map")
     val linkerOutput = LinkerOutput(PathOutputFile(jsFile))
       .withJSFileURI(java.net.URI.create(jsFile.getFileName.toString))

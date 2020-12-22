@@ -5,7 +5,7 @@ package worker
 import java.io.File
 
 import mill.api.Result
-import mill.scalajslib.api.{JsEnvConfig, ModuleKind}
+import mill.scalajslib.api.{JsEnvConfig, ModuleKind, ModuleSplitStyle}
 import org.scalajs.core.tools.io.IRFileCache.IRContainer
 import org.scalajs.core.tools.io._
 import org.scalajs.core.tools.jsdep.ResolvedJSDependency
@@ -50,16 +50,18 @@ class ScalaJSWorkerImpl extends mill.scalajslib.api.ScalaJSWorkerApi {
 
   def link(sources: Array[File],
            libraries: Array[File],
-           dest: File,
+           destDirectory: File,
            main: String,
            testBridgeInit: Boolean, // ignored in 0.6
            fullOpt: Boolean,
            moduleKind: ModuleKind,
+           moduleSplitStyle: ModuleSplitStyle, // ignored in 0.6
            useECMAScript2015: Boolean) = {
     val linker = ScalaJSLinker.reuseOrCreate(LinkerInput(fullOpt, moduleKind, useECMAScript2015))
     val sourceSJSIRs = sources.map(new FileVirtualScalaJSIRFile(_))
     val jars = libraries.map(jar => IRContainer.Jar(new FileVirtualBinaryFile(jar) with VirtualJarFile))
     val jarSJSIRs = jars.flatMap(_.jar.sjsirFiles)
+    val dest = new File(destDirectory, "main.js")
     val destFile = AtomicWritableFileVirtualJSFile(dest)
     val logger = new ScalaConsoleLogger
     val initializer = Option(main).map { cls => ModuleInitializer.mainMethodWithArgs(cls, "main") }

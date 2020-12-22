@@ -17,7 +17,15 @@ object Deps {
     val scalajsTools = ivy"org.scala-js::scalajs-tools:0.6.33"
   }
 
-  object Scalajs_1 {
+  object Scalajs_1_2_Minus {
+    val scalajsEnvJsdomNodejs =  ivy"org.scala-js::scalajs-env-jsdom-nodejs:1.1.0"
+    val scalajsEnvNodejs =  ivy"org.scala-js::scalajs-env-nodejs:1.1.1"
+    val scalajsEnvPhantomjs =  ivy"org.scala-js::scalajs-env-phantomjs:1.0.0"
+    val scalajsSbtTestAdapter = ivy"org.scala-js::scalajs-sbt-test-adapter:1.2.0"
+    val scalajsLinker = ivy"org.scala-js::scalajs-linker:1.2.0"
+  }
+
+  object Scalajs_1_3_Plus {
     val scalajsEnvJsdomNodejs =  ivy"org.scala-js::scalajs-env-jsdom-nodejs:1.1.0"
     val scalajsEnvNodejs =  ivy"org.scala-js::scalajs-env-nodejs:1.1.1"
     val scalajsEnvPhantomjs =  ivy"org.scala-js::scalajs-env-phantomjs:1.0.0"
@@ -319,7 +327,8 @@ object scalajslib extends MillModule {
   def testArgs = T{
     val mapping = Map(
       "MILL_SCALAJS_WORKER_0_6" -> worker("0.6").compile().classes.path,
-      "MILL_SCALAJS_WORKER_1" -> worker("1").compile().classes.path
+      "MILL_SCALAJS_WORKER_1_2_MINUS" -> worker("1.2-").compile().classes.path,
+      "MILL_SCALAJS_WORKER_1_3_PLUS" -> worker("1.3+").compile().classes.path
     )
     Seq("-Djna.nosys=true") ++
     scalalib.worker.testArgs() ++
@@ -331,7 +340,7 @@ object scalajslib extends MillModule {
     def moduleDeps = Seq(main.api)
     def ivyDeps = Agg(Deps.sbtTestInterface)
   }
-  object worker extends Cross[WorkerModule]("0.6", "1")
+  object worker extends Cross[WorkerModule]("0.6", "1.2-", "1.3+")
   class WorkerModule(scalajsWorkerVersion: String) extends MillApiModule{
     def moduleDeps = Seq(scalajslib.api)
     def ivyDeps = scalajsWorkerVersion match {
@@ -344,13 +353,24 @@ object scalajslib extends MillModule {
           Deps.jettyServer,
           Deps.javaxServlet
         )
-      case "1" =>
+      case "1.2-" =>
         Agg(
-          Deps.Scalajs_1.scalajsLinker,
-          Deps.Scalajs_1.scalajsSbtTestAdapter,
-          Deps.Scalajs_1.scalajsEnvNodejs,
-          Deps.Scalajs_1.scalajsEnvJsdomNodejs,
-          Deps.Scalajs_1.scalajsEnvPhantomjs,
+          Deps.Scalajs_1_2_Minus.scalajsLinker,
+          Deps.Scalajs_1_2_Minus.scalajsSbtTestAdapter,
+          Deps.Scalajs_1_2_Minus.scalajsEnvNodejs,
+          Deps.Scalajs_1_2_Minus.scalajsEnvJsdomNodejs,
+          Deps.Scalajs_1_2_Minus.scalajsEnvPhantomjs,
+          Deps.jettyWebsocket,
+          Deps.jettyServer,
+          Deps.javaxServlet
+        )
+      case "1.3+" =>
+        Agg(
+          Deps.Scalajs_1_3_Plus.scalajsLinker,
+          Deps.Scalajs_1_3_Plus.scalajsSbtTestAdapter,
+          Deps.Scalajs_1_3_Plus.scalajsEnvNodejs,
+          Deps.Scalajs_1_3_Plus.scalajsEnvJsdomNodejs,
+          Deps.Scalajs_1_3_Plus.scalajsEnvPhantomjs,
           Deps.jettyWebsocket,
           Deps.jettyServer,
           Deps.javaxServlet

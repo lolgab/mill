@@ -76,6 +76,7 @@ trait ScalaJSModule extends scalalib.ScalaModule { outer =>
       testBridgeInit = false,
       FastOpt,
       moduleKind(),
+      moduleSplitStyle(),
       useECMAScript2015()
     )
   }
@@ -89,6 +90,7 @@ trait ScalaJSModule extends scalalib.ScalaModule { outer =>
       testBridgeInit = false,
       FullOpt,
       moduleKind(),
+      moduleSplitStyle(),
       useECMAScript2015()
     )
   }
@@ -124,11 +126,9 @@ trait ScalaJSModule extends scalalib.ScalaModule { outer =>
            testBridgeInit: Boolean,
            mode: OptimizeMode,
            moduleKind: ModuleKind,
+           moduleSplitStyle: ModuleSplitStyle,
            useECMAScript2015: Boolean)(implicit ctx: Ctx): Result[PathRef] = {
-    val outputPath = ctx.dest / "out.js"
-
     os.makeDir.all(ctx.dest)
-    os.remove.all(outputPath)
 
     val classpath = runClasspath.map(_.path)
     val sjsirFiles = classpath
@@ -140,11 +140,12 @@ trait ScalaJSModule extends scalalib.ScalaModule { outer =>
       toolsClasspath.map(_.path),
       sjsirFiles,
       libraries,
-      outputPath.toIO,
+      ctx.dest.toIO,
       mainClass,
       testBridgeInit,
       mode == FullOpt,
       moduleKind,
+      moduleSplitStyle,
       useECMAScript2015
     ).map(PathRef(_))
   }
@@ -172,6 +173,8 @@ trait ScalaJSModule extends scalalib.ScalaModule { outer =>
 
   def moduleKind: T[ModuleKind] = T { ModuleKind.NoModule }
 
+  def moduleSplitStyle: T[ModuleSplitStyle] = T { ModuleSplitStyle.FewestModules }
+
   def useECMAScript2015: T[Boolean] = false
 }
 
@@ -197,6 +200,7 @@ trait TestScalaJSModule extends ScalaJSModule with TestModule {
       testBridgeInit = true,
       FastOpt,
       moduleKind(),
+      moduleSplitStyle(),
       useECMAScript2015()
     )
   }

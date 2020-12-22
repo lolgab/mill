@@ -112,6 +112,10 @@ object Util {
   def scalaJSWorkerVersion(scalaJSVersion: String) = scalaJSVersion match {
     case _ if scalaJSVersion.startsWith("0.6.") =>
       "0.6"
+    case ScalaJSFullVersion("1", minor, _, _) if minor.toInt <= 2 =>
+      "1.2-"
+    case ScalaJSFullVersion("1", _, _, _) =>
+      "1.3+"
     case ScalaJSFullVersion(major, _, _, _) =>
       major
   }
