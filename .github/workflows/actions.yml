@@ -18,17 +18,12 @@ jobs:
           - ci/test-mill-bootstrap-1.sh
           - ./mill -i -k "{main,scalalib,scalajslib,scalanativelib,bsp}.__.test"
           - ./mill -i -k "contrib.__.prepareOffline" + "contrib._.test"
-          # - ./mill -i integration.test "mill.integration.local.JawnTests"
-          - ./mill -i integration.test "mill.integration.local.{AcyclicTests,AmmoniteTests,DocAnnotationsTests}"
           - ./mill -i docs.antora.githubPages
           # Caffeine tests require a published testng contrib module
           - |
             ./mill -i contrib.testng.publishLocal
-            ./mill -i integration.test "mill.integration.local.CaffeineTests"
+            ./mill -i integration.test "mill.integration.local.all"
         include:
-          - java-version: 8
-            # buildcmd: ./mill -i integration.test "mill.integration.local.{BetterFilesTests,UpickleTests}"
-            buildcmd: ./mill -i integration.test "mill.integration.local.UpickleTests"
           # Just some reporting to enable reasoning about library upgrades
           - java-version: 8
             buildcmd: | 
@@ -91,7 +86,7 @@ jobs:
         buildcmd:
           - cmd /C %GITHUB_WORKSPACE%\ci\mill.bat -i -d -k "{__.publishLocal,assembly,__.compile}"
           - cmd /C %GITHUB_WORKSPACE%\ci\mill.bat -i -d -k "{main,scalalib,scalajslib,bsp}.__.test"
-          - cmd /C %GITHUB_WORKSPACE%\ci\mill.bat -i -d integration.test "mill.integration.local.{AcyclicTests,AmmoniteTests,DocAnnotationsTests}"
+          - cmd /C %GITHUB_WORKSPACE%\ci\mill.bat -i -d integration.test "mill.integration.local.all"
           - cmd /C %GITHUB_WORKSPACE%\ci\mill.bat -i -d -k "contrib.__.prepareOffline" + "contrib.__.test"
 
     runs-on: windows-latest

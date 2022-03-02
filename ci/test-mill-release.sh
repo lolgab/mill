@@ -19,6 +19,4 @@ rm -rf ~/.mill/ammonite
 ci/patch-mill-bootstrap.sh
 
 # Run tests
-~/mill-release -i integration.test "mill.integration.forked.{AcyclicTests,UpickleTests,PlayJsonTests}"
-
-~/mill-release -i integration.test "mill.integration.forked.CaffeineTests"
+~/mill-release -i integration.test "mill.integration.forked.all"
