@@ -112,6 +112,14 @@ private[scalajslib] class ScalaJSWorker extends AutoCloseable {
     )
   }
 
+  private def toWorkerApi(logger: mill.api.Logger) = new workerApi.Logger {
+    def error(message: String): Unit = logger.error(message)
+    def info(message: String): Unit = logger.info(message)
+    def warn(message: String): Unit = logger.error(message)
+    def debug(message: String): Unit = logger.debug(message)
+    def trace(t: Throwable): Unit = logger.error(t.toString)
+  }
+
   private def toWorkerApi(report: api.Report): workerApi.Report = {
     workerApi.Report(
       publicModules = report.publicModules.map(module =>
@@ -151,7 +159,7 @@ private[scalajslib] class ScalaJSWorker extends AutoCloseable {
       esFeatures: api.ESFeatures,
       moduleSplitStyle: api.ModuleSplitStyle,
       outputPatterns: api.OutputPatterns
-  )(implicit ctx: Ctx.Home): Result[api.Report] = {
+  )(implicit ctx: Ctx): Result[api.Report] = {
     bridge(toolsClasspath).link(
       sources = sources.items.map(_.toIO).toArray,
       libraries = libraries.items.map(_.toIO).toArray,
@@ -165,7 +173,8 @@ private[scalajslib] class ScalaJSWorker extends AutoCloseable {
       moduleKind = toWorkerApi(moduleKind),
       esFeatures = toWorkerApi(esFeatures),
       moduleSplitStyle = toWorkerApi(moduleSplitStyle),
-      outputPatterns = toWorkerApi(outputPatterns)
+      outputPatterns = toWorkerApi(outputPatterns),
+      logger = toWorkerApi(ctx.log)
     ) match {
       case Right(report) => Result.Success(fromWorkerApi(report))
       case Left(message) => Result.Failure(message)
@@ -173,10 +182,10 @@ private[scalajslib] class ScalaJSWorker extends AutoCloseable {
   }
 
   def run(toolsClasspath: Agg[mill.PathRef], config: api.JsEnvConfig, report: api.Report)(
-      implicit ctx: Ctx.Home
+      implicit ctx: Ctx
   ): Unit = {
     val dest =
-      bridge(toolsClasspath).run(toWorkerApi(config), toWorkerApi(report))
+      bridge(toolsClasspath).run(toWorkerApi(config), toWorkerApi(report), toWorkerApi(ctx.log))
   }
 
   def getFramework(
@@ -184,11 +193,12 @@ private[scalajslib] class ScalaJSWorker extends AutoCloseable {
       config: api.JsEnvConfig,
       frameworkName: String,
       report: api.Report
-  )(implicit ctx: Ctx.Home): (() => Unit, sbt.testing.Framework) = {
+  )(implicit ctx: Ctx): (() => Unit, sbt.testing.Framework) = {
     bridge(toolsClasspath).getFramework(
       toWorkerApi(config),
       frameworkName,
-      toWorkerApi(report)
+      toWorkerApi(report),
+      toWorkerApi(ctx.log)
     )
   }
 

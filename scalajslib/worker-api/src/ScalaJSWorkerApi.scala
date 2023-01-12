@@ -16,15 +16,17 @@ private[scalajslib] trait ScalaJSWorkerApi {
       moduleKind: ModuleKind,
       esFeatures: ESFeatures,
       moduleSplitStyle: ModuleSplitStyle,
-      outputPatterns: OutputPatterns
+      outputPatterns: OutputPatterns,
+      logger: Logger
   ): Either[String, Report]
 
-  def run(config: JsEnvConfig, report: Report): Unit
+  def run(config: JsEnvConfig, report: Report, logger: Logger): Unit
 
   def getFramework(
       config: JsEnvConfig,
       frameworkName: String,
-      report: Report
+      report: Report,
+      logger: Logger
   ): (() => Unit, sbt.testing.Framework)
 
 }
@@ -111,3 +113,11 @@ private[scalajslib] final case class OutputPatterns(
   jsFileURI: String,
   sourceMapURI: String
 )
+
+private[scalajslib] trait Logger {
+  def error(message: String): Unit
+  def warn(message: String): Unit
+  def info(message: String): Unit
+  def debug(message: String): Unit
+  def trace(t: Throwable): Unit
+}

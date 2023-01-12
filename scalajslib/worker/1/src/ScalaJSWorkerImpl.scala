@@ -165,7 +165,8 @@ class ScalaJSWorkerImpl extends ScalaJSWorkerApi {
       moduleKind: ModuleKind,
       esFeatures: ESFeatures,
       moduleSplitStyle: ModuleSplitStyle,
-      outputPatterns: OutputPatterns
+      outputPatterns: OutputPatterns,
+      logger: Logger
   ): Either[String, Report] = {
     // On Scala.js 1.2- we want to use the legacy mode either way since
     // the new mode is not supported and in tests we always use legacy = false
@@ -185,7 +186,7 @@ class ScalaJSWorkerImpl extends ScalaJSWorkerApi {
     val sourceIRsFuture = Future.sequence(sources.toSeq.map(f => PathIRFile(f.toPath())))
     val irContainersPairs = PathIRContainer.fromClasspath(libraries.map(_.toPath()))
     val libraryIRsFuture = irContainersPairs.flatMap(pair => cache.cached(pair._1))
-    val logger = new ScalaConsoleLogger
+    val scalaJSLogger = LoggerConverter.toScalaJS(logger)
     val mainInitializer = Option(main).map { cls =>
       ModuleInitializer.mainMethodWithArgs(cls, "main")
     }
@@ -211,7 +212,7 @@ class ScalaJSWorkerImpl extends ScalaJSWorkerApi {
               .withSourceMap(PathOutputFile(sourceMapFile))
               .withSourceMapURI(java.net.URI.create(sourceMapFile.getFileName.toString))
           }
-          linker.link(sourceIRs ++ libraryIRs, moduleInitializers, linkerOutput, logger).map {
+          linker.link(sourceIRs ++ libraryIRs, moduleInitializers, linkerOutput, scalaJSLogger).map {
             file =>
               Report(
                 publicModules = Seq(Report.Module(
@@ -229,7 +230,7 @@ class ScalaJSWorkerImpl extends ScalaJSWorkerApi {
             sourceIRs ++ libraryIRs,
             moduleInitializers,
             linkerOutput,
-            logger
+            scalaJSLogger
           ).map { report =>
             Report(
               publicModules =
@@ -256,21 +257,22 @@ class ScalaJSWorkerImpl extends ScalaJSWorkerApi {
     Await.result(resultFuture, Duration.Inf)
   }
 
-  def run(config: JsEnvConfig, report: Report): Unit = {
+  def run(config: JsEnvConfig, report: Report, logger: Logger): Unit = {
     val env = jsEnv(config)
     val input = jsEnvInput(report)
-    val runConfig = RunConfig().withLogger(new ScalaConsoleLogger)
+    val runConfig = RunConfig().withLogger(LoggerConverter.toScalaJS(logger))
     Run.runInterruptible(env, input, runConfig)
   }
 
   def getFramework(
       config: JsEnvConfig,
       frameworkName: String,
-      report: Report
+      report: Report,
+      logger: Logger
   ): (() => Unit, sbt.testing.Framework) = {
     val env = jsEnv(config)
     val input = jsEnvInput(report)
-    val tconfig = TestAdapter.Config().withLogger(new ScalaConsoleLogger)
+    val tconfig = TestAdapter.Config().withLogger(LoggerConverter.toScalaJS(logger))
 
     val adapter = new TestAdapter(env, input, tconfig)
 
