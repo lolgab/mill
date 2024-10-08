@@ -256,6 +256,43 @@ abstract class MillBuildRootModule()(implicit
   override protected def semanticDbPluginClasspath: T[Agg[PathRef]] =
     super.semanticDbPluginClasspath() ++ lineNumberPluginClasspath()
 
+  override def semanticDbData = T {
+    val superResult = super.semanticDbData()
+    val buildFiles = parseBuildFiles()
+
+    val wd = Some(T.workspace)
+
+    val generatedSources = generateScriptSources()
+
+    buildFiles.seenScripts
+      .foreach { case (path, code) =>
+        val generatedSource = generatedSources.find(_.path.last == path.last)
+        val adjust: (Int, Int) => Option[(Int, Int)] = (line, column) =>
+          generatedSource.map { p =>
+            val newLine = os.read.lines(p.path).iterator.takeWhile(line => line != "//MILL_USER_CODE_START_MARKER").size
+
+            (newLine + line, column)
+          }
+
+        val module = SemanticdbProcessor.SourceFile(path, code)
+
+        val semanticDbFileName = s"${path.last}.semanticdb"
+        val orig =
+          os.walk(superResult.path).find(p => os.isFile(p) && p.last == semanticDbFileName).get
+        val dest = T.dest / "META-INF/semanticdb" / semanticDbFileName
+
+        SemanticdbProcessor.postProcess(
+          module = module,
+          wd = wd,
+          adjust = adjust,
+          orig = orig,
+          dest = dest
+        )
+      }
+
+    PathRef(T.dest)
+  }
+
   def lineNumberPluginClasspath: T[Agg[PathRef]] = Task {
     millProjectModule("mill-runner-linenumbers", repositoriesTask())
   }

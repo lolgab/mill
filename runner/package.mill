@@ -20,6 +20,7 @@ object `package` extends RootModule with build.MillPublishScalaModule {
     build.main.server,
     client
   )
+  override def ivyDeps = T { super.ivyDeps() ++ Agg(build.Deps.semanticDBscala) }
   def skipPreviousVersions: T[Seq[String]] = Seq("0.11.0-M7")
 
   object linenumbers extends build.MillPublishScalaModule {
