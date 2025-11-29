@@ -17,9 +17,6 @@ import scala.scalanative.build.{
 }
 import scala.scalanative.testinterface.adapter.TestAdapter
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.file.Files
 
 class ScalaNativeWorkerImpl extends mill.scalanativelib.worker.api.ScalaNativeWorkerApi {
@@ -114,7 +111,7 @@ class ScalaNativeWorkerImpl extends mill.scalanativelib.worker.api.ScalaNativeWo
   def nativeLink(nativeConfig: Object, outDirectory: File): File = {
     val config = nativeConfig.asInstanceOf[Config]
 
-    val result = Await.result(Build.buildCached(config), Duration.Inf)
+    val result = Build.buildCachedAwait(config)
 
     val resultInOutDirectory =
       Files.move(result, outDirectory.toPath().resolve(result.getFileName()))
